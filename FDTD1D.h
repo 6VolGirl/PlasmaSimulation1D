@@ -14,13 +14,14 @@
 #include "DrudeADE.h"
 #include "Normalization.h"
 
+extern int n_test;
 
 class FDTD1D {
 private:
     ParamsPack pack_;
     const SimulationParameters& p_;
-    PMLCoefficients pml_;
-    DrudeADE ade_;
+    //PMLCoefficients pml_;
+    //DrudeADE ade_;
 
     std::vector<double> Ex_, Hy_;           // Electric and magnetic fields
     std::vector<double> Ex_prev_;           // E^{n-1} for history
@@ -42,9 +43,17 @@ private:
         double evaluateChirp(double t) const {
             if (t < start || t > finish ) return 0.0;
 
+            if (t< finish-0.1) {
+                n_test++;
+            }
+            else {
+                std::cout << n_test << std::endl;
+                n_test++;
+            }
+
             const double tau = t - t0;
             //const double envelope = std::exp(-(tau * tau) / (2.0 * width * width));
-            const double envelope  =1.0;
+            const double envelope  = 1.0;
             //const double phase = freqCenter * tau + 0.5 * freqSweep * tau * tau;
             const double phase = freqCenter * tau;
             return envelope * std::sin(phase);
@@ -169,9 +178,9 @@ public:
                 const double x_tilde = (static_cast<double>(i) - p_.source_pos) * invRes;
                 const double Ez      = snapshotsEx_[k][i];
 
-                out << t_over_fL << ","    // столбец 1
-                    << x_tilde   << ","    // столбец 2
-                    << Ez        << "\n";  // столбец 3
+                out << t_over_fL << ","
+                    << x_tilde   << ","
+                    << Ez        << "\n";
             }
         }
 

@@ -35,7 +35,7 @@ int main() {
     params.source_pos = 40;
     params.sourceFreqCenter = 1e18;
     params.sourceFreqWidth = 0.5e16;
-    params.pulseWidth = 20e-15;
+    params.pulseWidth = 20e-17;
 
     // PML
     params.pmlThickness = 20;
