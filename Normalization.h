@@ -75,25 +75,6 @@ inline ParamsPack makeNormalizedParams(const SimulationParameters& p_si) {
     return pack;
 }
 
-//     ParamsPack pack{p_si, p_si, Normalization(p_si.dx)};
-//
-//     // Сетка: a=dx
-//     pack.nd.dx = 1.0;
-//     pack.nd.dy = 1.0;
-//     pack.nd.dz = 1.0;
-//
-//     // Время: t~ = t / (a/c0), поэтому dt~ = Q*dx~ = Q
-//     pack.nd.dt = pack.nd.courantNumber * pack.nd.dx; // = Q
-//
-//     pack.nd.omega_p = pack.norm.omegaToDimless(p_si.omega_p);
-//     pack.nd.gamma   = pack.norm.omegaToDimless(p_si.gamma);
-//     pack.nd.sourceFreqCenter = pack.norm.omegaToDimless(p_si.sourceFreqCenter);
-//     pack.nd.sourceFreqWidth  = pack.norm.omegaToDimless(p_si.sourceFreqWidth);
-//
-//     pack.nd.pulseWidth = pack.norm.timeToDimless(p_si.pulseWidth);
-//
-//     return pack;
-// }
 
 
 

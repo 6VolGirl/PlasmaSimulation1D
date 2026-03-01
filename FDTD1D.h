@@ -75,10 +75,7 @@ public:
         snapshotsEx_.clear();
         snap_idx_ = 0;
 
-        // times_over_fL заданы как {12, 30, 100} в единицах 1/fL
-        // В вашей нормировке: t_unit = a/c0, а fL = c0/a => fL * t_unit = 1
-        // Значит безразмерное время t~ численно равно (t * fL).
-        // Следовательно step = round(t~ / dt~) = round((t/fL) / dt~) = round(times_over_fL / dt)
+
         for (double tau : times_over_fL) {
             int step = (int)std::llround(tau / p_.dt);
             if (step < 0) step = 0;
@@ -90,52 +87,98 @@ public:
         snapshotSteps_.erase(std::unique(snapshotSteps_.begin(), snapshotSteps_.end()), snapshotSteps_.end());
     }
 
-    void writeImpulsePlasma(const std::string& filename, const std::vector<double>& times_over_fL) const
+    // void writeImpulsePlasma(const std::string& filename, const std::vector<double>& times_over_fL) const
+    // {
+    //     std::ofstream out(filename);
+    //     out << std::scientific << std::setprecision(9);
+    //
+    //     if (snapshotsEx_.size() < times_over_fL.size()) {
+    //         out << "# ERROR: not enough snapshots saved. Saved = " << snapshotsEx_.size()
+    //             << ", requested = " << times_over_fL.size() << "\n";
+    //         return;
+    //     }
+    //
+    //     out << "# x_tilde = (i - source_pos)/resolution  (this equals x*fL/c)\n";
+    //     out << "# plasma region in x_tilde: [plasmaStart, plasmaStart+plasmaWidth] / resolution\n";
+    //     //out << "# Columns: x_tilde  Ez(t=" << times_over_fL[0] << "/fL)"
+    //     //    << "  Ez(t=" << times_over_fL[1] << "/fL)"
+    //     //    << "  Ez(t=" << times_over_fL[2] << "/fL)\n";
+    //
+    //     // const double invRes = 1.0 / (double)p_.resolution;
+    //     //
+    //     // for (int i = 0; i < p_.nx; ++i) {
+    //     //     double x_tilde = (i - p_.source_pos) * invRes;
+    //     //
+    //     //     out << x_tilde;
+    //     //     for (size_t k = 0; k < snapshotsEx_[k].size(); ++k) {
+    //     //         out << "\t" << snapshotsEx_[k][i];
+    //     //     }
+    //     //     out << "\n";
+    //     // }
+    //
+    //
+    //     const double invRes = 1.0 / (double)p_.resolution;
+    //
+    //     for (int i = 0; i < p_.nx; ++i) {
+    //         double x_tilde = (i - p_.source_pos) * invRes;
+    //         out << x_tilde;
+    //
+    //         for (size_t k = 0; k < snapshotsEx_.size(); ++k) {
+    //             out << "\t" << snapshotsEx_[k][i];
+    //         }
+    //         out << "\n";
+    //     }
+    //
+    //
+    //     out.close();
+    //     std::cout << "Impulse snapshots written to " << filename << "\n";
+    // }
+
+    void writeImpulsePlasmaCSV(const std::string& filename,
+                           const std::vector<double>& times_over_fL) const
     {
         std::ofstream out(filename);
+        if (!out.is_open()) {
+            std::cerr << "Cannot open " << filename << " for writing\n";
+            return;
+        }
+
         out << std::scientific << std::setprecision(9);
 
-        if (snapshotsEx_.size() < times_over_fL.size()) {
-            out << "# ERROR: not enough snapshots saved. Saved = " << snapshotsEx_.size()
+        const size_t Nt = snapshotsEx_.size();      // число временных срезов
+        const int    Nx = p_.nx;                    // число узлов по x
+
+        if (Nt < times_over_fL.size()) {
+            out << "# ERROR: not enough snapshots saved. Saved = " << Nt
                 << ", requested = " << times_over_fL.size() << "\n";
             return;
         }
 
-        out << "# x_tilde = (i - source_pos)/resolution  (this equals x*fL/c)\n";
-        out << "# plasma region in x_tilde: [plasmaStart, plasmaStart+plasmaWidth] / resolution\n";
-        //out << "# Columns: x_tilde  Ez(t=" << times_over_fL[0] << "/fL)"
-        //    << "  Ez(t=" << times_over_fL[1] << "/fL)"
-        //    << "  Ez(t=" << times_over_fL[2] << "/fL)\n";
+        const double invRes = 1.0 / static_cast<double>(p_.resolution);
 
-        // const double invRes = 1.0 / (double)p_.resolution;
-        //
-        // for (int i = 0; i < p_.nx; ++i) {
-        //     double x_tilde = (i - p_.source_pos) * invRes;
-        //
-        //     out << x_tilde;
-        //     for (size_t k = 0; k < snapshotsEx_[k].size(); ++k) {
-        //         out << "\t" << snapshotsEx_[k][i];
-        //     }
-        //     out << "\n";
-        // }
+        // ---------- заголовок CSV ----------
+        // time_over_fL,x_tilde,Ez
+        out << "time_over_fL,x_tilde,Ez\n";
 
+        // ---------- данные в "длинном" формате ----------
+        // каждая строка: t_k, x_i, Ez(t_k, x_i)
+        for (size_t k = 0; k < Nt; ++k) {
+            const double t_over_fL  = static_cast<double>(k) * p_.dt;
 
-        const double invRes = 1.0 / (double)p_.resolution;
+            for (int i = 0; i < Nx; ++i) {
+                const double x_tilde = (static_cast<double>(i) - p_.source_pos) * invRes;
+                const double Ez      = snapshotsEx_[k][i];
 
-        for (int i = 0; i < p_.nx; ++i) {
-            double x_tilde = (i - p_.source_pos) * invRes;
-            out << x_tilde;
-
-            for (size_t k = 0; k < snapshotsEx_.size(); ++k) {
-                out << "\t" << snapshotsEx_[k][i];
+                out << t_over_fL << ","    // столбец 1
+                    << x_tilde   << ","    // столбец 2
+                    << Ez        << "\n";  // столбец 3
             }
-            out << "\n";
         }
 
-
         out.close();
-        std::cout << "Impulse snapshots written to " << filename << "\n";
+        std::cout << "Impulse snapshots written to " << filename << " (CSV)\n";
     }
+
 };
 
 

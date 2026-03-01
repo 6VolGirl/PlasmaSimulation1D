@@ -117,49 +117,6 @@ void FDTD1D::run() {
             Ex_[i]      = Ex_new;
         }
 
-        // ade_.updatePolarizationCurrent(Ex_, Ex_prev_, dt);
-        // double C1 = ade_.getC1();
-        // double C2 = ade_.getC2();
-        // double C3 = ade_.getC3();
-        //
-        // std::vector<double> A, B, D;
-        // A.resize(p_.nx);
-        // B.resize(p_.nx);
-        // D.resize(p_.nx);
-        // for (int i = 1; i < p_.nx - 1; ++i) {
-        //     A[i] = pml_.gi3[i] * C2 + pml_.gi2[i] * pml_.gi1[i];
-        //     B[i] = pml_.gi3[i] * C1;
-        //     D[i] = pml_.gi3[i] * C3;
-        // }
-        //
-        // // for (int i = 1; i < p_.nx - 1; ++i) {
-        // //     double curl_h = Hy_[i] - Hy_[i - 1];
-        // //     double pol_correction = ade_.getPolarizationCorrection(i);
-        // //     double Ex_new = A[i] * Ex_[i] + B[i] * Ex_prev_[i] + D[i] * (curl_h - pol_correction);
-        // //     //double Ex_new = C2 * Ex_[i] + C1 * Ex_prev_[i] + C3 * (curl_h - pol_correction);
-        // //     // Apply PML
-        // //     //Ex_new = pml_.gi3[i] * Ex_new + pml_.gi2[i] * pml_.gi1[i] * Ex_[i];
-        // //
-        // //
-        // //     Ex_prev_[i] = Ex_[i];
-        // //     Ex_[i] = Ex_new;
-        // //
-        // // }
-        //
-        //
-        // // for (int i = 1; i < p_.nx - 1; ++i) {
-        // //     double curl_h = Hy_[i] - Hy_[i - 1];
-        // //     Ex_[i] += factor * curl_h;  // в нормировке ε=1
-        // // }
-        // for (int i = 1; i < p_.nx - 1; ++i) {
-        //     double curl_h = Hy_[i] - Hy_[i - 1];
-        //     double pol_correction = ade_.getPolarizationCorrection(i);
-        //     double Ex_new = C2 * Ex_[i] + C1 * Ex_prev_[i] + C3 * (curl_h - pol_correction);
-        //
-        //     Ex_prev_[i] = Ex_[i];
-        //     Ex_[i]      = Ex_new;
-        // }
-
         // Чирпированный источник
         double t = step * dt;
         Ex_[p_.source_pos] += source_.evaluateChirp(t);

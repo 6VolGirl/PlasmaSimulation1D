@@ -57,7 +57,8 @@ int main() {
 
         sim.run();
         sim.analyzeFourierSpectra("reflection_transmission1.txt");
-        sim.writeImpulsePlasma("ImpulsePlasma.txt", times_over_fL);
+        //sim.writeImpulsePlasma("ImpulsePlasma.txt", times_over_fL);
+        sim.writeImpulsePlasmaCSV("ImpulsePlasma.cvs", times_over_fL);
 
         std::cout << "\nSimulation successful!\n";
         std::cout << "Output files:\n"
