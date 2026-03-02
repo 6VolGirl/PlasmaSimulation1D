@@ -21,7 +21,7 @@ private:
     ParamsPack pack_;
     const SimulationParameters& p_;
     PMLCoefficients pml_;
-    //DrudeADE ade_;
+    DrudeADE ade_;
 
     std::vector<double> Ex_, Hy_;           // Electric and magnetic fields
     std::vector<double> Ex_prev_;           // E^{n-1} for history

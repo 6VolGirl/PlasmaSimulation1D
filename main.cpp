@@ -13,7 +13,7 @@ int main() {
     params.nx = 256;
     params.ny = 1;
     params.nz = 1;
-    params.numTimeSteps = 20000;
+    params.numTimeSteps = 10000;
     params.dx = 10e-9;
     params.dy = params.dz = params.dx;
     params.courantNumber = 0.5;
@@ -44,7 +44,7 @@ int main() {
 
     // Monitors
     params.monitorFront = 50;
-    params.plasmaStart = 50;
+    params.plasmaStart = 150;
     params.plasmaWidth = 50;
     params.monitorBack = 101;
 

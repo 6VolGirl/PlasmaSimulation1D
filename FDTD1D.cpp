@@ -10,8 +10,8 @@ extern int n_test = 0;
 FDTD1D::FDTD1D(const SimulationParameters& params_si)
         : pack_(makeNormalizedParams(params_si)),
           p_(pack_.nd),
-          pml_(p_.nx, p_.pmlThickness) {
-          //ade_(p_.nx, p_, calculateTimeStep())  {
+          pml_(p_.nx, p_.pmlThickness),
+          ade_(p_.nx, p_, calculateTimeStep())  {
 
     int size = p_.nx;
     Ex_.resize(size, 0.0);
@@ -76,50 +76,12 @@ void FDTD1D::run() {
     //     Ex_[0]      = 0.0;
     //     Ex_[p_.nx-1]= 0.0;
 
-    // Чистый Yee и PML
-    for (int step = 0; step < p_.numTimeSteps; ++step) {
-
-        for (int i = 0; i < p_.nx - 1; ++i) {
-            double curl_e = Ex_[i + 1] - Ex_[i];
-
-            double C1 = factor;
-            double fi1 = pml_.fi1[i];
-            double fi2 = pml_.fi2[i];
-            double fi3 = pml_.fi3[i];
-
-            double AH = fi3 + fi2 * fi1;
-            double DH = fi3 * C1;
-
-            Hy_[i] = AH * Hy_[i] + DH * curl_e;
-        }
-
-        for (int i = 1; i < p_.nx; ++i) {
-            double curl_h = Hy_[i] - Hy_[i - 1];
-
-            double C2 = 1.0;       // вакуум
-            double C3 = factor;    // стандартный Yee
-
-            double gi1 = pml_.gi1[i];
-            double gi2 = pml_.gi2[i];
-            double gi3 = pml_.gi3[i];
-
-            double A = gi3 * C2 + gi2 * gi1;
-            double D = gi3 * C3;
-
-            Ex_[i] = A * Ex_[i] + D * curl_h;
-        }
-
-        Ex_[0]     = 0.0;
-        Ex_[p_.nx-1]  = 0.0;
-
-    //Полная почти рабочая реализация с РML и ADE
-    // const int plasmaStart = p_.plasmaStart;
-    // const int plasmaEnd = p_.plasmaStart + p_.plasmaWidth;
-    //
+    // // Чистый Yee и PML
     // for (int step = 0; step < p_.numTimeSteps; ++step) {
     //
-    //     for (int i = 1; i < p_.nx - 1; ++i) {
+    //     for (int i = 0; i < p_.nx - 1; ++i) {
     //         double curl_e = Ex_[i + 1] - Ex_[i];
+    //
     //         double C1 = factor;
     //         double fi1 = pml_.fi1[i];
     //         double fi2 = pml_.fi2[i];
@@ -127,50 +89,88 @@ void FDTD1D::run() {
     //
     //         double AH = fi3 + fi2 * fi1;
     //         double DH = fi3 * C1;
-    //         double H_new = AH * Hy_[i] + DH * curl_e;
-    //         Hy_[i] = H_new;
+    //
+    //         Hy_[i] = AH * Hy_[i] + DH * curl_e;
     //     }
     //
-    //     ade_.updatePolarizationCurrent(Ex_, Ex_prev_, dt);
-    //
-    //     for (int i = 1; i < p_.nx - 1; ++i) {
+    //     for (int i = 1; i < p_.nx; ++i) {
     //         double curl_h = Hy_[i] - Hy_[i - 1];
     //
-    //         double C1, C2, C3;
-    //         double pol_correction = 0.0;
-    //
-    //         if (i >= plasmaStart && i < plasmaEnd) {
-    //             double gamma_sum = ade_.getGamma(i);
-    //             double eps_inf = p_.epsilon_inf;
-    //             double sigma = p_.sigmaCond;
-    //             double denominator = 2.0 * eps_inf + sigma * dt + 0.5 * gamma_sum;
-    //
-    //             C1 = (0.5 * gamma_sum) / denominator;
-    //             C2 = (2.0 * eps_inf - sigma * dt) / denominator;
-    //             C3 = (2.0 * dt) / denominator;
-    //
-    //             pol_correction = ade_.getPolarizationCorrection(i);
-    //         } else {//вакуум
-    //             C1 = 0.0;
-    //             C2 = 1.0;
-    //             C3 = factor;
-    //         }
+    //         double C2 = 1.0;       // вакуум
+    //         double C3 = factor;    // стандартный Yee
     //
     //         double gi1 = pml_.gi1[i];
     //         double gi2 = pml_.gi2[i];
     //         double gi3 = pml_.gi3[i];
     //
     //         double A = gi3 * C2 + gi2 * gi1;
-    //         double B = gi3 * C1;
     //         double D = gi3 * C3;
     //
-    //         double Ex_new = A * Ex_[i]
-    //                       + B * Ex_prev_[i]
-    //                       + D * (curl_h - pol_correction);
-    //
-    //         Ex_prev_[i] = Ex_[i];
-    //         Ex_[i]      = Ex_new;
+    //         Ex_[i] = A * Ex_[i] + D * curl_h;
     //     }
+    //
+    //     Ex_[0]     = 0.0;
+    //     Ex_[p_.nx-1]  = 0.0;
+
+    //Полная почти рабочая реализация с РML и ADE
+    const int plasmaStart = p_.plasmaStart;
+    const int plasmaEnd = p_.plasmaStart + p_.plasmaWidth;
+
+    for (int step = 0; step < p_.numTimeSteps; ++step) {
+
+        for (int i = 1; i < p_.nx - 1; ++i) {
+            double curl_e = Ex_[i + 1] - Ex_[i];
+            double C1 = factor;
+            double fi1 = pml_.fi1[i];
+            double fi2 = pml_.fi2[i];
+            double fi3 = pml_.fi3[i];
+
+            double AH = fi3 + fi2 * fi1;
+            double DH = fi3 * C1;
+            double H_new = AH * Hy_[i] + DH * curl_e;
+            Hy_[i] = H_new;
+        }
+
+        ade_.updatePolarizationCurrent(Ex_, Ex_prev_, dt);
+
+        for (int i = 1; i < p_.nx - 1; ++i) {
+            double curl_h = Hy_[i] - Hy_[i - 1];
+
+            double C1, C2, C3;
+            double pol_correction = 0.0;
+
+            if (i >= plasmaStart && i < plasmaEnd) {
+                double gamma_sum = ade_.getGamma(i);
+                double eps_inf = p_.epsilon_inf;
+                double sigma = p_.sigmaCond;
+                double denominator = 2.0 * eps_inf + sigma * dt + 0.5 * gamma_sum;
+
+                C1 = (0.5 * gamma_sum) / denominator;
+                C2 = (2.0 * eps_inf - sigma * dt) / denominator;
+                C3 = (2.0 * dt) / denominator;
+
+                pol_correction = ade_.getPolarizationCorrection(i);
+            } else {//вакуум
+                C1 = 0.0;
+                C2 = 1.0;
+                C3 = factor;
+            }
+
+            double gi1 = pml_.gi1[i];
+            double gi2 = pml_.gi2[i];
+            double gi3 = pml_.gi3[i];
+
+            double A = gi3 * C2 + gi2 * gi1;
+            double B = gi3 * C1;
+            double D = gi3 * C3;
+
+            double Ex_new = A * Ex_[i]
+                          + B * Ex_prev_[i]
+                          + D * (curl_h - pol_correction);
+
+            Ex_prev_[i] = Ex_[i];
+            Ex_[i]      = Ex_new;
+        }
 
 
 
