@@ -34,6 +34,16 @@ struct SimulationParameters {
     // Monitors
     int monitorFront;
     int monitorBack;
+
+    // Drude plasma (ADE)
+    bool   useDrude = true;      // включить/выключить плазму
+    int    plasmaStart = 150;    // индекс начала плазмы
+    int    plasmaWidth = 100;    // ширина плазмы
+    double omega_p = 1.0;        // плазменная частота
+    double gamma   = 0.0;        // затухание
+    double epsilon_inf = 1.0;
+    double sigmaCond   = 0.0;    // доп. проводимость материала
+
 };
 
 
