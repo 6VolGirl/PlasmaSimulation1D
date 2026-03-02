@@ -1,68 +1,61 @@
 #include <iostream>
+#include <vector>
+#include <cmath>
+#include <algorithm>
 #include "SimulationParameters.h"
 #include "FDTD1D.h"
-#include "DrudeADE.h"
+
+// здесь должны быть подключения заголовков/кода с SimulationParameters,
+// GaussianSource, PMLSigma, FDTD1D_PythonStyle
 
 int main() {
     SimulationParameters params;
+    params.resolution= 20;
 
-    params.a = 800e-9;
-    params.resolution = 100;
+    // --- сетка и шаги ---
+    params.nx             = 400;     // число ячеек H (E будет nx+1)
+    params.dx             = 1.0 / params.resolution; // как в python: dx = 1/resolution
+    params.courantNumber  = 0.5;
+    params.dt             = params.courantNumber * params.dx;
+    params.numTimeSteps   = 1000;
 
-    // Grid and time
-    params.nx = 256;
-    params.ny = 1;
-    params.nz = 1;
-    params.numTimeSteps = 20000;
-    params.dx = 10e-9;
-    params.dy = params.dz = params.dx;
-    params.courantNumber = 0.5;
+    // --- базовый материал ---
+    params.eps0 = 1.0;
+    params.mu0  = 1.0;
 
-    // Plasma
-    params.omega_p = 0.0; //1.4e16;
-    params.gamma = 0.0; //1.0e14;
-    params.epsilon_inf = 1.0;
-    params.sigmaCond = 0.0;     // Drude
+    // --- PML ---
+    params.pmlThickness   = 20;      // в ячейках
+    params.pmlDamping     = 1e-9;    // целевой уровень затухания (как python damping)
+    params.pmlProfilePower= 3;       // cubic
 
+    // --- источник (как GaussianSource в python) ---
+    // пример: центральная длина волны ~ 0.5 (безразмерная),
+    // тогда частота ~ 1/0.5 = 2 (cycles/единицу времени)
+    double wavelength_min = 0.3;
+    double wavelength_max = 0.8;
+    params.sourceFreq   = 2.0 / (wavelength_min + wavelength_max);          // freq (cycles/time)
+    params.sourceFWidth = 1.0 / wavelength_min - 1.0 / wavelength_max;      // bandwidth
 
-    //Тестим
-    // const double c0 = 299792458.0;
-    // double fL = c0 / params.a;          // Hz
-    // double fp = 0.9 * fL;
-    // params.sourceFreqCenter = 2.0 * M_PI * fp;
-    // params.pulseWidth = 1.5 / fL;
-    // Source
-    params.source_pos = 40;
-    params.sourceFreqCenter = 1e18;
-    params.sourceFreqWidth = 0.5e16;
-    params.pulseWidth = 20e-18;
+    params.source_pos   = 50;       // ячейка источника (внутри области, не в PML)
 
-    // PML
-    params.pmlThickness = 30;
-    params.pmlReflectCoeff = 1e-6;
-    params.pmlGrading_m = 4.0;
+    // --- мониторы (заготовка) ---
+    params.monitorFront = 80;
+    params.monitorBack  = 300;
 
-    // Monitors
-    params.monitorFront = 50;
-    params.plasmaStart = 50;
-    params.plasmaWidth = 50;
-    params.monitorBack = 101;
-
-
+    // --- запуск симуляции ---
     try {
-        FDTD1D sim(params);
-
-        std::vector<double> times_over_fL = {2.0, 10.0, 50.0, 100.0, 1000.0};
-        sim.setSnapshotTimes_fl(times_over_fL);
-
+        FDTD1D_PythonStyle sim(params);
         sim.run();
-        sim.analyzeFourierSpectra("reflection_transmission1.txt");
-        //sim.writeImpulsePlasma("ImpulsePlasma.txt", times_over_fL);
+        std::vector<double> times_over_fL = {2.0, 10.0, 50.0, 100.0, 1000.0};
         sim.writeImpulsePlasmaCSV("ImpulsePlasma.cvs", times_over_fL);
 
-        std::cout << "\nSimulation successful!\n";
-        std::cout << "Output files:\n"
-                  << "  - reflection_transmission.txt (R/T coefficients)\n";
+        std::cout << "Simulation finished.\n";
+
+        // здесь можно добавить:
+        //  - сохранение Ex_/Hy_ (нужно сделать геттеры)
+        //  - расчёт спектров в мониторах
+        //  - вывод в файл
+
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << "\n";
         return 1;

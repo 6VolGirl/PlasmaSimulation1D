@@ -7,41 +7,35 @@
 
 
 
-struct SimulationParameters {
-    double a;          //Характерная длина [м]
-    int resolution;   // количество ячеек в ячейке
 
-    // Grid and time
-    int nx, ny, nz;
+struct SimulationParameters {
+    int nx;
     int numTimeSteps;
-    double dx, dy, dz;
+    double dx;
     double dt;
     double courantNumber;
 
-    // Plasma (Drude)
-    double omega_p;
-    double gamma;
-    double epsilon_inf;
-    double sigmaCond;
+    // ДОБАВИТЬ:
+    int resolution;   // число ячеек на единицу длины (как в python)
 
-    // Source
-    int source_pos;
-    double sourceFreqCenter;
-    double sourceFreqWidth;
-    double pulseWidth;
+    // Material base
+    double eps0 = 1.0;
+    double mu0  = 1.0;
 
     // PML
     int pmlThickness;
-    double pmlReflectCoeff;  // Теоретический
-    double pmlGrading_m;
+    double pmlDamping = 1e-9;
+    int pmlProfilePower = 3;
+
+    // Source
+    int source_pos;
+    double sourceFreq;
+    double sourceFWidth;
 
     // Monitors
     int monitorFront;
     int monitorBack;
-    int plasmaStart;
-    int plasmaWidth;
 };
-
 
 
 #endif //SIMULATIONPARAMETERS_H

@@ -2,8 +2,6 @@
 // Created by 6anna on 15.02.2026.
 //
 
-#ifndef FDTD1D_H
-#define FDTD1D_H
 
 #include <fstream>
 #include <cmath>
@@ -11,140 +9,106 @@
 #include <algorithm>
 #include <complex>
 #include "PMLCoefficients.h"
-#include "DrudeADE.h"
-#include "Normalization.h"
+//#include "DrudeADE.h"
+//#include "Normalization.h"
+#include "SimulationParameters.h"
 
-extern int n_test;
+    struct GaussianSource {
+        double freq;
+        double fwidth;
+        double start_time = 0.0;
+        double cutoff = 3.0;
 
-class FDTD1D {
-private:
-    ParamsPack pack_;
-    const SimulationParameters& p_;
-    PMLCoefficients pml_;
-    //DrudeADE ade_;
+        double w, t0, finish_time;
 
-    std::vector<double> Ex_, Hy_;           // Electric and magnetic fields
-    std::vector<double> Ex_prev_;           // E^{n-1} for history
-
-    struct Monitor {
-        std::vector<std::complex<double>> spectrum_e;
-        int position;
-    };
-    Monitor monitorFront_, monitorBack_;
-
-    struct ChirpSource {
-        double start;   // starttime (безразмерное)
-        double finish;  // finishtime (безразмерное)
-
-        double t0;
-        double width;
-        double freqCenter, freqSweep;
-
-        double evaluateChirp(double t) const {
-            if (t < start || t > finish ) return 0.0;
-
-            if (t< finish-0.1) {
-                n_test++;
-            }
-            else {
-                std::cout << n_test << std::endl;
-                n_test++;
-            }
-
-            const double tau = t - t0;
-            //const double envelope = std::exp(-(tau * tau) / (2.0 * width * width));
-            const double envelope  = 1.0;
-            //const double phase = freqCenter * tau + 0.5 * freqSweep * tau * tau;
-            const double phase = freqCenter * tau;
-            return envelope * std::sin(phase);
+        GaussianSource(double freq_, double fwidth_, double start=0.0, double cutoff_=3.0)
+            : freq(freq_), fwidth(fwidth_), start_time(start), cutoff(cutoff_) {
+            w = 1.0 / fwidth;
+            t0 = start_time + cutoff * w;
+            finish_time = start_time + 2.0 * cutoff * w;
         }
-    } source_;
 
+        double operator()(double t) const {
+            if (t < start_time || t > finish_time) return 0.0;
+            double tau = t - t0;
+            return std::exp(-0.5 * (tau*tau) / (w*w)) * std::sin(2.0*M_PI*freq*t);
+        }
+    };
 
-    std::vector<int> snapshotSteps_;
-    std::vector<std::vector<double>> snapshotsEx_;   // snapshotsEx_[k][i] = Ex(i)
-    int snap_idx_ = 0;
-
+class FDTD1D_PythonStyle {
 public:
-    FDTD1D(const SimulationParameters& params);
+    explicit FDTD1D_PythonStyle(const SimulationParameters& p)
+        : p_(p),
+          src_(p.sourceFreq, p.sourceFWidth),
+          Ex_(p.nx + 1, 0.0),
+          Hy_(p.nx, 0.0),
+          eps_(p.nx + 1, p.eps0),
+          mu_(p.nx, p.mu0),
+          pml_(p.nx, p.pmlThickness, p.eps0, p.mu0,
+               p.pmlDamping, p.pmlProfilePower, p.dx)
+    {
+        sigmaE_ = pml_.sigmaE;
+        sigmaM_ = pml_.sigmaM;
+    }
 
-    double calculateTimeStep() const ;
-    void run();
+    void run() {
+        std::vector<double> ca(p_.nx + 1), cb(p_.nx + 1), db(p_.nx);
 
-    //Фурье анализ
-    void analyzeFourierSpectra(const std::string& output_file);
+        for (int i = 0; i < p_.nx + 1; ++i) {
+            double denom = (2.0 * eps_[i] + sigmaE_[i] * p_.dt);
+            ca[i] = (2.0 * eps_[i] - sigmaE_[i] * p_.dt) / denom;
+            cb[i] = 2.0 * p_.dt / (p_.dx * denom);
+        }
+        for (int i = 0; i < p_.nx; ++i) {
+            double denom = (2.0 * mu_[i] + sigmaM_[i] * p_.dt);
+            db[i] = 2.0 * p_.dt / (p_.dx * denom);
+        }
 
-    double getMaxField() const;
+        snapshotsEx_.clear();
 
-    const std::vector<double>& getEx() const { return Ex_; }
-    const std::vector<double>& getHy() const { return Hy_; }
+        for (int n = 0; n < p_.numTimeSteps; ++n) {
+            // E update (как в simulation.py: Ey[1:-1] = ca*Ey + cb*(Hz[:-1] - Hz[1:]))
+            for (int i = 1; i < p_.nx; ++i) {
+                Ex_[i] = ca[i] * Ex_[i] + cb[i] * (Hy_[i - 1] - Hy_[i]);
+            }
 
+            // источник (soft source)
+            double t = n * p_.dt;
+            Ex_[p_.source_pos] += src_(t);
+
+            // H update (как в simulation.py: Hz[:] = Hz[:] + db*(Ey[:-1] - Ey[1:]))
+            for (int i = 0; i < p_.nx; ++i) {
+                Hy_[i] = Hy_[i] + db[i] * (Ex_[i] - Ex_[i + 1]);
+            }
+
+            // сохранение снапшотов, если шаг n входит в список
+            if (n % 2 == 0) {
+                snapshotsEx_.push_back(Ex_);
+            }
+        }
+    }
+
+    // задать моменты времени (в безразмерных единицах), где нужно сохранить Ex
     void setSnapshotTimes_fl(const std::vector<double>& times_over_fL) {
         snapshotSteps_.clear();
         snapshotsEx_.clear();
-        snap_idx_ = 0;
-
 
         for (double tau : times_over_fL) {
-            int step = (int)std::llround(tau / p_.dt);
+            int step = static_cast<int>(std::llround(tau / p_.dt));
             if (step < 0) step = 0;
             if (step >= p_.numTimeSteps) step = p_.numTimeSteps - 1;
             snapshotSteps_.push_back(step);
         }
 
         std::sort(snapshotSteps_.begin(), snapshotSteps_.end());
-        snapshotSteps_.erase(std::unique(snapshotSteps_.begin(), snapshotSteps_.end()), snapshotSteps_.end());
+        snapshotSteps_.erase(std::unique(snapshotSteps_.begin(),
+                                         snapshotSteps_.end()),
+                             snapshotSteps_.end());
     }
 
-    // void writeImpulsePlasma(const std::string& filename, const std::vector<double>& times_over_fL) const
-    // {
-    //     std::ofstream out(filename);
-    //     out << std::scientific << std::setprecision(9);
-    //
-    //     if (snapshotsEx_.size() < times_over_fL.size()) {
-    //         out << "# ERROR: not enough snapshots saved. Saved = " << snapshotsEx_.size()
-    //             << ", requested = " << times_over_fL.size() << "\n";
-    //         return;
-    //     }
-    //
-    //     out << "# x_tilde = (i - source_pos)/resolution  (this equals x*fL/c)\n";
-    //     out << "# plasma region in x_tilde: [plasmaStart, plasmaStart+plasmaWidth] / resolution\n";
-    //     //out << "# Columns: x_tilde  Ez(t=" << times_over_fL[0] << "/fL)"
-    //     //    << "  Ez(t=" << times_over_fL[1] << "/fL)"
-    //     //    << "  Ez(t=" << times_over_fL[2] << "/fL)\n";
-    //
-    //     // const double invRes = 1.0 / (double)p_.resolution;
-    //     //
-    //     // for (int i = 0; i < p_.nx; ++i) {
-    //     //     double x_tilde = (i - p_.source_pos) * invRes;
-    //     //
-    //     //     out << x_tilde;
-    //     //     for (size_t k = 0; k < snapshotsEx_[k].size(); ++k) {
-    //     //         out << "\t" << snapshotsEx_[k][i];
-    //     //     }
-    //     //     out << "\n";
-    //     // }
-    //
-    //
-    //     const double invRes = 1.0 / (double)p_.resolution;
-    //
-    //     for (int i = 0; i < p_.nx; ++i) {
-    //         double x_tilde = (i - p_.source_pos) * invRes;
-    //         out << x_tilde;
-    //
-    //         for (size_t k = 0; k < snapshotsEx_.size(); ++k) {
-    //             out << "\t" << snapshotsEx_[k][i];
-    //         }
-    //         out << "\n";
-    //     }
-    //
-    //
-    //     out.close();
-    //     std::cout << "Impulse snapshots written to " << filename << "\n";
-    // }
-
+    // запись снапшотов в CSV: time_over_fL,x_tilde,Ez
     void writeImpulsePlasmaCSV(const std::string& filename,
-                           const std::vector<double>& times_over_fL) const
+                               const std::vector<double>& times_over_fL) const
     {
         std::ofstream out(filename);
         if (!out.is_open()) {
@@ -154,8 +118,8 @@ public:
 
         out << std::scientific << std::setprecision(9);
 
-        const size_t Nt = snapshotsEx_.size();      // число временных срезов
-        const int    Nx = p_.nx;                    // число узлов по x
+        const size_t Nt = snapshotsEx_.size();
+        const int    Nx = p_.nx;
 
         if (Nt < times_over_fL.size()) {
             out << "# ERROR: not enough snapshots saved. Saved = " << Nt
@@ -165,22 +129,19 @@ public:
 
         const double invRes = 1.0 / static_cast<double>(p_.resolution);
 
-        // ---------- заголовок CSV ----------
-        // time_over_fL,x_tilde,Ez
         out << "time_over_fL,x_tilde,Ez\n";
 
-        // ---------- данные в "длинном" формате ----------
-        // каждая строка: t_k, x_i, Ez(t_k, x_i)
         for (size_t k = 0; k < Nt; ++k) {
-            const double t_over_fL  = static_cast<double>(k) * p_.dt;
+            double t_over_fL = (2.0 * k) * p_.dt;
 
             for (int i = 0; i < Nx; ++i) {
-                const double x_tilde = (static_cast<double>(i) - p_.source_pos) * invRes;
-                const double Ez      = snapshotsEx_[k][i];
+                const double x_tilde =
+                    (static_cast<double>(i) - p_.source_pos) * invRes;
+                const double Ez = snapshotsEx_[k][i];
 
                 out << t_over_fL << ","
-                    << x_tilde   << ","
-                    << Ez        << "\n";
+                    << x_tilde      << ","
+                    << Ez           << "\n";
             }
         }
 
@@ -188,8 +149,17 @@ public:
         std::cout << "Impulse snapshots written to " << filename << " (CSV)\n";
     }
 
+private:
+    const SimulationParameters& p_;
+    GaussianSource src_;
+
+    std::vector<double> Ex_, Hy_;
+    std::vector<double> eps_, mu_;
+    std::vector<double> sigmaE_, sigmaM_;
+    PMLSigma pml_;
+
+    std::vector<int> snapshotSteps_;
+    std::vector<std::vector<double>> snapshotsEx_;
 };
 
 
-
-#endif //FDTD1D_H

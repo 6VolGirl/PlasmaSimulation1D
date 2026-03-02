@@ -8,44 +8,41 @@
 #include <vector>
 
 
-class PMLCoefficients {
+class PMLSigma {
 public:
-    std::vector<double> gi1, gi2, gi3;  // E-поле curl
-    std::vector<double> fi1, fi2, fi3;  // H-поле curl
+    std::vector<double> sigmaE; // size nx+1
+    std::vector<double> sigmaM; // size nx
 
-    PMLCoefficients(int gridSize, int pmlThickness, double pmlCoeff = 0.33) {
-        gi1.resize(gridSize, 0.0);
-        gi2.resize(gridSize, 1.0);
-        gi3.resize(gridSize, 1.0);
-        fi1.resize(gridSize, 0.0);
-        fi2.resize(gridSize, 1.0);
-        fi3.resize(gridSize, 1.0);
+    PMLSigma(int nx, int pmlCells, double eps, double mu, double damping, int power, double dx)
+        : sigmaE(nx+1, 0.0), sigmaM(nx, 0.0)
+    {
+        double eta = std::sqrt(mu/eps);
+        double L = pmlCells * dx;
+        double s = -std::log(damping) / (eta * L);
+        double s_m = s * mu / eps;
 
-        for (int n = 0; n < pmlThickness; ++n) {
-            double xxn = (double)(pmlThickness - n) / pmlThickness;
-            double xn = pmlCoeff * xxn * xxn * xxn;
+        auto prof = [&](int n, int N) {
+            double x = double(n) / double(N); // 0..1
+            double val = 1.0;
+            for(int k=0;k<power;k++) val *= x;
+            return val;
+        };
 
-            fi1[n] = xn;
-            gi2[n] = 1.0 / (1.0 + xn);
-            gi3[n] = (1.0 - xn) / (1.0 + xn);
+        for (int i = 0; i < pmlCells; ++i) {
+            double g = prof(i, pmlCells); // increases inward->outward; adjust if needed
+            // Left side (reverse in python)
+            sigmaE[i]       = prof(pmlCells-1-i, pmlCells) * s;
+            if(i < nx) sigmaM[i] = prof(pmlCells-1-i, pmlCells) * s_m;
 
-            fi1[gridSize - n - 1] = xn;
-            gi2[gridSize - n - 1] = 1.0 / (1.0 + xn);
-            gi3[gridSize - n - 1] = (1.0 - xn) / (1.0 + xn);
-
-            // Half-step versions
-            xxn = (double)(pmlThickness - n - 0.5) / pmlThickness;
-            xn = pmlCoeff * xxn * xxn * xxn;
-            gi1[n] = xn;
-            fi2[n] = 1.0 / (1.0 + xn);
-            fi3[n] = (1.0 - xn) / (1.0 + xn);
-
-            gi1[gridSize - n - 1] = xn;
-            fi2[gridSize - n - 1] = 1.0 / (1.0 + xn);
-            fi3[gridSize - n - 1] = (1.0 - xn) / (1.0 + xn);
+            // Right side
+            int ie = (nx+1) - 1 - i;
+            int ih = nx - 1 - i;
+            sigmaE[ie] = prof(pmlCells-1-i, pmlCells) * s;
+            sigmaM[ih] = prof(pmlCells-1-i, pmlCells) * s_m;
         }
     }
 };
+
 
 
 
