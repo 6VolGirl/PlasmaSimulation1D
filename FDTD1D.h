@@ -20,7 +20,7 @@ class FDTD1D {
 private:
     ParamsPack pack_;
     const SimulationParameters& p_;
-    //PMLCoefficients pml_;
+    PMLCoefficients pml_;
     //DrudeADE ade_;
 
     std::vector<double> Ex_, Hy_;           // Electric and magnetic fields

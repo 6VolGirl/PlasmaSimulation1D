@@ -9,8 +9,8 @@ extern int n_test = 0;
 
 FDTD1D::FDTD1D(const SimulationParameters& params_si)
         : pack_(makeNormalizedParams(params_si)),
-          p_(pack_.nd) {
-          //pml_(p_.nx, p_.pmlThickness),
+          p_(pack_.nd),
+          pml_(p_.nx, p_.pmlThickness) {
           //ade_(p_.nx, p_, calculateTimeStep())  {
 
     int size = p_.nx;
@@ -60,22 +60,57 @@ void FDTD1D::run() {
     snapshotsEx_.reserve(snapshotSteps_.size());
     snap_idx_ = 0;
 
-    // Чистый Yee
+    // // Чистый Yee
+    // for (int step = 0; step < p_.numTimeSteps; ++step) {
+    //
+    //     for (int i = 0; i < p_.nx - 1; ++i) {
+    //         double curl_e = Ex_[i + 1] - Ex_[i];
+    //         Hy_[i] += factor * curl_e;
+    //     }
+    //
+    //     for (int i = 1; i < p_.nx; ++i) {
+    //         double curl_h = Hy_[i] - Hy_[i - 1];
+    //         Ex_[i] += factor * curl_h;
+    //     }
+    //
+    //     Ex_[0]      = 0.0;
+    //     Ex_[p_.nx-1]= 0.0;
+
+    // Чистый Yee и PML
     for (int step = 0; step < p_.numTimeSteps; ++step) {
 
         for (int i = 0; i < p_.nx - 1; ++i) {
             double curl_e = Ex_[i + 1] - Ex_[i];
-            Hy_[i] += factor * curl_e;
+
+            double C1 = factor;
+            double fi1 = pml_.fi1[i];
+            double fi2 = pml_.fi2[i];
+            double fi3 = pml_.fi3[i];
+
+            double AH = fi3 + fi2 * fi1;
+            double DH = fi3 * C1;
+
+            Hy_[i] = AH * Hy_[i] + DH * curl_e;
         }
 
         for (int i = 1; i < p_.nx; ++i) {
             double curl_h = Hy_[i] - Hy_[i - 1];
-            Ex_[i] += factor * curl_h;
+
+            double C2 = 1.0;       // вакуум
+            double C3 = factor;    // стандартный Yee
+
+            double gi1 = pml_.gi1[i];
+            double gi2 = pml_.gi2[i];
+            double gi3 = pml_.gi3[i];
+
+            double A = gi3 * C2 + gi2 * gi1;
+            double D = gi3 * C3;
+
+            Ex_[i] = A * Ex_[i] + D * curl_h;
         }
 
-        Ex_[0]      = 0.0;
-        Ex_[p_.nx-1]= 0.0;
-
+        Ex_[0]     = 0.0;
+        Ex_[p_.nx-1]  = 0.0;
 
     //Полная почти рабочая реализация с РML и ADE
     // const int plasmaStart = p_.plasmaStart;

@@ -35,12 +35,12 @@ int main() {
     params.source_pos = 40;
     params.sourceFreqCenter = 1e18;
     params.sourceFreqWidth = 0.5e16;
-    params.pulseWidth = 20e-17;
+    params.pulseWidth = 20e-18;
 
     // PML
-    params.pmlThickness = 20;
+    params.pmlThickness = 30;
     params.pmlReflectCoeff = 1e-6;
-    params.pmlGrading_m = 3.0;
+    params.pmlGrading_m = 4.0;
 
     // Monitors
     params.monitorFront = 50;
