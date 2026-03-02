@@ -67,48 +67,25 @@ public:
         snapshotsEx_.clear();
 
         for (int n = 0; n < p_.numTimeSteps; ++n) {
-            // E update (как в simulation.py: Ey[1:-1] = ca*Ey + cb*(Hz[:-1] - Hz[1:]))
             for (int i = 1; i < p_.nx; ++i) {
                 Ex_[i] = ca[i] * Ex_[i] + cb[i] * (Hy_[i - 1] - Hy_[i]);
             }
 
-            // источник (soft source)
             double t = n * p_.dt;
             Ex_[p_.source_pos] += src_(t);
 
-            // H update (как в simulation.py: Hz[:] = Hz[:] + db*(Ey[:-1] - Ey[1:]))
             for (int i = 0; i < p_.nx; ++i) {
                 Hy_[i] = Hy_[i] + db[i] * (Ex_[i] - Ex_[i + 1]);
             }
 
-            // сохранение снапшотов, если шаг n входит в список
             if (n % 2 == 0) {
                 snapshotsEx_.push_back(Ex_);
             }
         }
     }
 
-    // задать моменты времени (в безразмерных единицах), где нужно сохранить Ex
-    void setSnapshotTimes_fl(const std::vector<double>& times_over_fL) {
-        snapshotSteps_.clear();
-        snapshotsEx_.clear();
 
-        for (double tau : times_over_fL) {
-            int step = static_cast<int>(std::llround(tau / p_.dt));
-            if (step < 0) step = 0;
-            if (step >= p_.numTimeSteps) step = p_.numTimeSteps - 1;
-            snapshotSteps_.push_back(step);
-        }
-
-        std::sort(snapshotSteps_.begin(), snapshotSteps_.end());
-        snapshotSteps_.erase(std::unique(snapshotSteps_.begin(),
-                                         snapshotSteps_.end()),
-                             snapshotSteps_.end());
-    }
-
-    // запись снапшотов в CSV: time_over_fL,x_tilde,Ez
-    void writeImpulsePlasmaCSV(const std::string& filename,
-                               const std::vector<double>& times_over_fL) const
+    void writeImpulsePlasmaCSV(const std::string& filename) const
     {
         std::ofstream out(filename);
         if (!out.is_open()) {
@@ -120,12 +97,6 @@ public:
 
         const size_t Nt = snapshotsEx_.size();
         const int    Nx = p_.nx;
-
-        if (Nt < times_over_fL.size()) {
-            out << "# ERROR: not enough snapshots saved. Saved = " << Nt
-                << ", requested = " << times_over_fL.size() << "\n";
-            return;
-        }
 
         const double invRes = 1.0 / static_cast<double>(p_.resolution);
 

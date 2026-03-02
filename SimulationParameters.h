@@ -9,14 +9,13 @@
 
 
 struct SimulationParameters {
+    int resolution;
+
     int nx;
     int numTimeSteps;
     double dx;
     double dt;
     double courantNumber;
-
-    // ДОБАВИТЬ:
-    int resolution;   // число ячеек на единицу длины (как в python)
 
     // Material base
     double eps0 = 1.0;
