@@ -10,7 +10,7 @@ PMLSigma::PMLSigma(int nx, int pmlCells, double eps, double mu, double damping, 
 {
     double eta = std::sqrt(mu/eps);
     double L = pmlCells * dx;
-    double s = -std::log(damping) / (eta * L);
+    double s   = -std::log(damping) * std::sqrt(mu * eps) / L;
     double s_m = s * mu / eps;
 
     auto prof = [&](int n, int N) {
