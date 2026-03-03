@@ -42,14 +42,14 @@ int main() {
     params.drudeStart = 100;          // inclusive (E-узлы)
     params.drudeEnd   = 200;          // inclusive
 
-    params.drudeOmegaP = 8.0;         // пример
-    params.drudeGamma  = 0.2;         // пример
+    params.drudeOmegaP = 8.0;
+    params.drudeGamma  = 0.2;
     params.drudeStrength = 1.0;
 
     try {
         FDTD1D_PythonStyle sim(params);
         sim.run();
-        sim.writeImpulsePlasmaCSV("ImpulsePlasma.cvs"); // исправь расширение на .csv
+        sim.writeImpulsePlasmaCSV("ImpulsePlasma.cvs");
         std::cout << "Simulation finished.\n";
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << "\n";
