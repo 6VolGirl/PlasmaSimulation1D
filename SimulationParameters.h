@@ -15,7 +15,7 @@ struct SimulationParameters {
     double dx, dt, courantNumber;
 
     // Base
-    double epsInf0;
+    double epsInf;
     double mu0;
 
     // PML
@@ -30,10 +30,10 @@ struct SimulationParameters {
 
     // Drude ADE
     bool useDrude = false;
-    int drudeStart = 0;
-    int drudeEnd   = -1;
-    double drudeOmegaP = 0.0;   // ωp
-    double drudeGamma  = 0.0;   // Γ
+    int plasmaStart;
+    int plasmaEnd;
+    double оmega_p = 0.0;       // ωp
+    double gamma = 0.0;         // Γ
     double drudeStrength = 1.0; // f
 };
 
