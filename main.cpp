@@ -48,8 +48,17 @@ int main() {
 
     try {
         FDTD1D sim(params);
+
+        sim.addMonitor(80);
+        sim.addMonitor(220);
+
         sim.run();
+
         sim.writeImpulsePlasmaCSV("ImpulsePlasma.cvs");
+        sim.writeAllMonitorsCSV("monitors.cvs");
+
+        double tau =  sim.tunnelingTime(0, 1);
+        std::cout << "Tunneling time = " << tau << "\n";
         std::cout << "Simulation finished.\n";
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << "\n";

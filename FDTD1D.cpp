@@ -1,4 +1,7 @@
 
+#include <fstream>
+#include <iomanip>
+#include <iostream>
 #include "FDTD1D.h"
 
 FDTD1D::FDTD1D(const SimulationParameters& p)
@@ -73,6 +76,8 @@ void FDTD1D::run() {
             Ex_nm1_.swap(Ex_n_);
             Ex_n_.swap(Ex_np1_);
 
+            sampleMonitors(t);
+
             if (n % 2 == 0) snapshotsEx_.push_back(Ex_n_);
         }
     }
@@ -107,4 +112,85 @@ void FDTD1D::writeImpulsePlasmaCSV(const std::string& filename) const {
 
     out.close();
     std::cout << "Impulse snapshots written to " << filename << " (CSV)\n";
+}
+
+
+void FDTD1D::addMonitor(int pos) {
+    if (pos < p_.pmlThickness || pos >= static_cast<int>(Ex_n_.size())-p_.pmlThickness) {
+        throw std::out_of_range("addMonitor: position is out of Ex range or in PML");
+    }
+
+    Monitor m;
+    m.position = pos;
+    m.reserve(p_.numTimeSteps);
+
+    monitors_.push_back(m);
+
+}
+
+
+void FDTD1D::sampleMonitors(double t) {
+    for (auto& m : monitors_) {
+        m.sample(t, Ex_n_[m.position]);
+    }
+}
+
+
+double FDTD1D::tunnelingTime(std::size_t inMonitor, std::size_t outMonitor) const {
+    if (inMonitor >= monitors_.size() || outMonitor >= monitors_.size()) {
+        throw std::out_of_range("tunnelingTime: monitor index is out of range");
+    }
+
+    const Monitor& in  = monitors_[inMonitor];
+    const Monitor& out = monitors_[outMonitor];
+
+    if (in.time.empty() || out.time.empty()) {
+        throw std::runtime_error("tunnelingTime: monitor data is empty");
+    }
+
+    return out.centroidTime() - in.centroidTime();
+    }
+
+
+void FDTD1D::writeAllMonitorsCSV(const std::string& filename) const {
+    if (monitors_.empty()) {
+        std::cerr << "writeAllMonitorsCSV: no monitors to write\n";
+        return;
+    }
+
+    const std::size_t nSteps = monitors_[0].time.size();
+
+    for (std::size_t i = 0; i < monitors_.size(); ++i) {
+        if (monitors_[i].time.size() != nSteps ||
+            monitors_[i].fieldEx.size() != nSteps ||
+            monitors_[i].intensity.size() != nSteps) {
+            throw std::runtime_error("writeAllMonitorsCSV: monitor arrays have different sizes");
+            }
+    }
+
+    std::ofstream out(filename);
+    if (!out.is_open()) {
+        std::cerr << "Cannot open " << filename << " for writing\n";
+        return;
+    }
+
+    out << std::scientific << std::setprecision(9);
+
+    out << "time";
+    for (const auto& m : monitors_) {
+        out << ",Ex" << m.position
+            << ",I" << m.position;
+    }
+    out << "\n";
+
+    for (int k = 0; k < nSteps; k++) {
+        out << monitors_[0].time[k];
+        double rt_coeff = (monitors_[0].fieldEx[k] > 1e-15) ? monitors_[1].fieldEx[k] / monitors_[0].fieldEx[k] : 0.0;
+        out << "," << monitors_[0].fieldEx[k] << ", " << monitors_[0].intensity[k]
+            << "," << monitors_[1].fieldEx[k] << ", " << monitors_[1].intensity[k]
+            << rt_coeff << "\n";
+    }
+
+    out.close();
+    std::cout << "All monitors in file" << filename << "\n";
 }

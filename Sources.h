@@ -25,8 +25,18 @@ struct GaussianSource {
     double operator()(double t) const {
         if (t < start_time || t > finish_time) return 0.0;
         double tau = t - t0;
-        return std::exp(-0.5 * (tau*tau) / (w*w)) * std::sin(2.0*M_PI*freq*t);
+        double env = std::exp(-0.5 * tau * tau / (w * w));
+        double phase = 2.0 * M_PI * (freq * tau + 0.5 * 1 * tau * tau);
+
+        return env * std::sin(phase);
     }
+
+
+    // double operator()(double t) const {
+    //     if (t < start_time || t > finish_time) return 0.0;
+    //     double tau = t - t0;
+    //     return std::exp(-0.5 * (tau*tau) / (w*w)) * std::sin(2.0*M_PI*freq*t);
+    // }
 };
 
 #endif //SOURCES_H
