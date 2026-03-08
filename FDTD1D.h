@@ -17,7 +17,7 @@ class FDTD1D {
     const SimulationParameters& p_;
     GaussianSource src_;
 
-    std::vector<double> Ex_nm1_, Ex_n_, Ex_np1_;
+    std::vector<double> Ex_prev, Ex_n_, Ex_next;
     std::vector<double> Hy_;
     std::vector<double> epsInf_, mu_;
     std::vector<double> sigmaE_, sigmaM_;

@@ -4,7 +4,7 @@
 
 void DrudeADE::resize(int nE) {
     Jn.assign(nE, 0.0);
-    Jnm1.assign(nE, 0.0);
+    J_prev.assign(nE, 0.0);
     alpha.assign(nE, 0.0);
     xi.assign(nE, 0.0);
     gammaCoef.assign(nE, 0.0);
@@ -29,19 +29,19 @@ void DrudeADE::configureRegion(int i0, int i1, double omegaP, double Gamma, doub
         }
     }
 
-inline double DrudeADE::Jhalf_noEterm(int i) const {
-    if (!active[i]) return 0.0;
-    return 0.5 * ((1.0 + alpha[i]) * Jn[i] + xi[i] * Jnm1[i]);
-}
+// inline double DrudeADE::Jhalf_noEterm(int i) const  {
+//     if (!active[i]) return 0.0;
+//     return 0.5 * ((1.0 + alpha[i]) * Jn[i] + xi[i] * J_prev[i]);
+// }
+
 
 void DrudeADE::updateJ(const std::vector<double>& Enp1, const std::vector<double>& Enm1, double dt)
 {
-    const double inv2dt = 1.0 / (2.0 * dt);
     for (int i = 0; i < (int)Jn.size(); ++i) {
         if (!active[i]) continue;
-        const double dE = (Enp1[i] - Enm1[i]) * inv2dt;      // (E^{n+1}-E^{n-1})/(2dt) [file:3]
-        const double Jnp1 = alpha[i] * Jn[i] + xi[i] * Jnm1[i] + gammaCoef[i] * dE;
-        Jnm1[i] = Jn[i];
-        Jn[i] = Jnp1;
+        const double dE = (Enp1[i] - Enm1[i]) / (2.0 * dt);
+        const double J_next = alpha[i] * Jn[i] + xi[i] * J_prev[i] + gammaCoef[i] * dE;
+        J_prev[i] = Jn[i];
+        Jn[i] = J_next;
     }
 }

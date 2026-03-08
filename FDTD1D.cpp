@@ -4,9 +4,9 @@
 FDTD1D::FDTD1D(const SimulationParameters& p)
     : p_(p),
       src_(p.sourceFreq, p.sourceFWidth),
-      Ex_nm1_(p.nx + 1, 0.0),  // E^{n-1}
+      Ex_prev(p.nx + 1, 0.0),  // E^{n-1}
       Ex_n_(p.nx + 1, 0.0),    // E^{n}
-      Ex_np1_(p.nx + 1, 0.0),  // E^{n+1}
+      Ex_next(p.nx + 1, 0.0),  // E^{n+1}
       Hy_(p.nx, 0.0),          // H^{n+1/2} (храним полушаг)
       epsInf_(p.nx + 1, p.epsInf),
       mu_(p.nx, p.mu0),
@@ -36,7 +36,7 @@ void FDTD1D::run() {
 
 
         for (int n = 0; n < p_.numTimeSteps; ++n) {
-            Ex_np1_ = Ex_n_;
+            Ex_next = Ex_n_;
 
             for (int i = 1; i < p_.nx; ++i) {
                 const double gsum = drude_.gammaSum(i);
@@ -49,29 +49,29 @@ void FDTD1D::run() {
                 const double curlH = (Hy_[i - 1] - Hy_[i]) / p_.dx;
                 const double Jterm = drude_.Jhalf_noEterm(i);
 
-                Ex_np1_[i] = C1 * Ex_nm1_[i] + C2 * Ex_n_[i] + C3 * (curlH - Jterm);
+                Ex_next[i] = C1 * Ex_prev[i] + C2 * Ex_n_[i] + C3 * (curlH - Jterm);
             }
 
             // Границы
-            Ex_np1_[0] = 0.0;
-            Ex_np1_[p_.nx] = 0.0;
+            Ex_next[0] = 0.0;
+            Ex_next[p_.nx] = 0.0;
 
             // Источник
             const double t = n * p_.dt;
-            Ex_np1_[p_.source_pos] += src_(t);
+            Ex_next[p_.source_pos] += src_(t);
 
-            // 2) J^{n+1} (Drude/Lorentz ADE)
+            // 2) J^{n+1} (Drude)
             if (p_.useDrude) {
-                drude_.updateJ(Ex_np1_, Ex_nm1_, p_.dt);
+                drude_.updateJ(Ex_next, Ex_prev, p_.dt);
             }
 
             // 3) H^{n+3/2} из H^{n+1/2} и E^{n+1}
             for (int i = 0; i < p_.nx; ++i) {
-                Hy_[i] = da[i] * Hy_[i] + db[i] * (Ex_np1_[i] - Ex_np1_[i + 1]);
+                Hy_[i] = da[i] * Hy_[i] + db[i] * (Ex_next[i] - Ex_next[i + 1]);
             }
 
-            Ex_nm1_.swap(Ex_n_);
-            Ex_n_.swap(Ex_np1_);
+            Ex_prev.swap(Ex_n_);
+            Ex_n_.swap(Ex_next);
 
             if (n % 2 == 0) snapshotsEx_.push_back(Ex_n_);
         }
