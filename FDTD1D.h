@@ -41,6 +41,7 @@ public:
 
     void writeAllMonitorsCSV(const std::string& filename) const;
 
+    const Monitor& getMonitor(std::size_t index) const;
 };
 
 

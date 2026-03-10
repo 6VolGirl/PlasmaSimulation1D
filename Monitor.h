@@ -12,17 +12,20 @@ struct Monitor {
   int position;
   std::vector<double> time;
   std::vector<double> fieldEx;
+  std::vector<double> fieldHy;
   std::vector<double> intensity;
 
   void reserve(size_t n) {
     time.reserve(n);
     fieldEx.reserve(n);
+    fieldHy.reserve(n);
     intensity.reserve(n);
   }
 
-  void sample(double t, double e) {
+  void sample(double t, double e, double h) {
     time.push_back(t);
     fieldEx.push_back(e);
+    fieldEx.push_back(h);
     intensity.push_back(e * e);
   }
 
@@ -43,6 +46,8 @@ struct Monitor {
       out << time[k] << "," << fieldEx[k] <<  "," << intensity[k] << "\n";
     }
   }
+
+  std::vector<double> getEx() const {return fieldEx;};
 };
 
 

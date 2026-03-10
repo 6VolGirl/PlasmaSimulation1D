@@ -31,6 +31,7 @@ struct SimulationParameters {
     // Drude ADE
     bool useDrude = false;
     int plasmaStart;
+    double plasmaWidth;
     int plasmaEnd;
     double оmega_p = 0.0;       // ωp
     double gamma = 0.0;         // Γ

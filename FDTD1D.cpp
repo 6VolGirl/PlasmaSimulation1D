@@ -92,21 +92,34 @@ void FDTD1D::writeImpulsePlasmaCSV(const std::string& filename) const {
     out << std::scientific << std::setprecision(9);
 
     const size_t Nt = snapshotsEx_.size();
-    const int Nx = p_.nx;
-    const double invRes = 1.0 / static_cast<double>(p_.resolution);
+    // const int Nx = p_.nx;
+    // const double invRes = 1.0 / static_cast<double>(p_.resolution);
+    //
+    // out << "time_over_fL,x_tilde,Ez\n";
+    //
+    // for (size_t k = 0; k < Nt; ++k) {
+    //     const double t_over_fL = (2.0 * k) * p_.dt;
+    //
+    //     for (int i = 0; i < Nx; ++i) {
+    //         const double x_tilde = (static_cast<double>(i) - p_.source_pos) * invRes;
+    //         const double Ez = snapshotsEx_[k][i];
+    //
+    //         out << t_over_fL << ","
+    //             << x_tilde   << ","
+    //             << Ez        << "\n";
+    //     }
 
     out << "time_over_fL,x_tilde,Ez\n";
-
     for (size_t k = 0; k < Nt; ++k) {
-        const double t_over_fL = (2.0 * k) * p_.dt;
+        const double t_over_lambda_p = (2.0 * k) * p_.dt;
 
-        for (int i = 0; i < Nx; ++i) {
-            const double x_tilde = (static_cast<double>(i) - p_.source_pos) * invRes;
+        for (int i = 0; i < p_.nx; ++i) {
+            const double x_over_lambda_p = (static_cast<double>(i) - p_.source_pos) * p_.dx;
             const double Ez = snapshotsEx_[k][i];
 
-            out << t_over_fL << ","
-                << x_tilde   << ","
-                << Ez        << "\n";
+            out << t_over_lambda_p << ","
+                << x_over_lambda_p << ","
+                << Ez << "\n";
         }
     }
 
@@ -185,12 +198,20 @@ void FDTD1D::writeAllMonitorsCSV(const std::string& filename) const {
 
     for (int k = 0; k < nSteps; k++) {
         out << monitors_[0].time[k];
-        double rt_coeff = (monitors_[0].fieldEx[k] > 1e-15) ? monitors_[1].fieldEx[k] / monitors_[0].fieldEx[k] : 0.0;
-        out << "," << monitors_[0].fieldEx[k] << ", " << monitors_[0].intensity[k]
-            << "," << monitors_[1].fieldEx[k] << ", " << monitors_[1].intensity[k]
-            << rt_coeff << "\n";
+        for (const auto& m : monitors_) {
+            out << "," << m.fieldEx[k] << ", " << m.intensity[k];
+        }
+        out << "\n";
     }
 
     out.close();
     std::cout << "All monitors in file" << filename << "\n";
+}
+
+
+const Monitor& FDTD1D::getMonitor(std::size_t index) const {
+    if (index >= monitors_.size()) {
+        throw std::out_of_range("getMonitor: monitor index is out of range");
+    }
+    return monitors_[index];
 }

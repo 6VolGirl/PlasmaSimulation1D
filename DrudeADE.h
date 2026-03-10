@@ -23,7 +23,7 @@ public:
 
     inline double gammaSum(int i) const { return active[i] ? gammaCoef[i] : 0.0; }
 
-    inline double Jhalf_noEterm(int i) const;
+    double Jhalf_noEterm(int i) const;
 
     void updateJ(const std::vector<double>& Enp1, const std::vector<double>& Enm1, double dt);
 

@@ -29,7 +29,7 @@ void DrudeADE::configureRegion(int i0, int i1, double omegaP, double Gamma, doub
         }
     }
 
-inline double DrudeADE::Jhalf_noEterm(int i) const {
+double DrudeADE::Jhalf_noEterm(int i) const {
     if (!active[i]) return 0.0;
     return 0.5 * ((1.0 + alpha[i]) * Jn[i] + xi[i] * Jnm1[i]);
 }
