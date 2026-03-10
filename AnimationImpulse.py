@@ -7,12 +7,16 @@ matplotlib.use("TkAgg")
 
 
 i0 = 100
-L  = 100
+L = 100
 source_pos = 50
-resolution = 20
-plasma_x0 = (i0 - source_pos) / resolution
-plasma_x1 = (i0 + L - source_pos) / resolution
+plasmaStart = 100
+plasmaEnd = 167
+dx_norm = 0.06
 
+plasma_x0 = (plasmaStart - source_pos) * dx_norm
+plasma_x1 = (plasmaEnd - source_pos) * dx_norm
+
+# читаем CSV
 data = np.loadtxt(
     r"C:\Users\6anna\CLionProjects\PlasmaSimulator1D\cmake-build-debug\ImpulsePlasma.cvs",
     delimiter=",",
@@ -23,12 +27,14 @@ t = data[:, 0]
 x = data[:, 1]
 Ez = data[:, 2]
 
+# уникальные времена и координаты
 t_vals = np.unique(t)
 x_vals = np.unique(x)
 
 Nt = len(t_vals)
 Nx = len(x_vals)
 
+# собираем Ez в матрицу (Nt, Nx)
 Ez_grid = Ez.reshape(Nt, Nx)
 
 fig, ax = plt.subplots()
