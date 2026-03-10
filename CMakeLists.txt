@@ -8,4 +8,6 @@ add_executable(PlasmaSimulator1D
         FDTD1D.cpp
         DrudeADE.cpp
         PMLCoefficients.cpp
+        SpectrumAnalyzer.cpp
+
 )

@@ -4,6 +4,7 @@
 #include <algorithm>
 #include "SimulationParameters.h"
 #include "FDTD1D.h"
+#include "SpectrumAnalyzer.h"
 
 
 #include <iostream>
@@ -18,7 +19,7 @@ void normalizeParamsOnPlasmaWavelength(SimulationParameters& p) {
         throw std::runtime_error("normalizeParamsOnPlasmaWavelength: drudeOmegaP must be > 0.");
     }
 
-    const double L = 2 * M_PI / p.оmega_p; // λp в текущих единицах
+    const double L = 1.0 / p.оmega_p; // λp в текущих единицах
 
     p.dx /= L;
     p.dt /= L; //по-другому надо сделать?
@@ -70,9 +71,9 @@ int main() {
     SimulationParameters params;
 
     params.оmega_p = 8.0;
-    const double L = 2 * M_PI  / params.оmega_p;
+    const double L = 1.0 / params.оmega_p;
     params.plasmaWidth = 4.0 * L;
-    params.sourceFreq = 2.0 / L;
+    params.sourceFreq = 0.5 / L;
 
 
     // Сетка и шаги
@@ -94,7 +95,7 @@ int main() {
     params.pmlProfilePower = 3;
 
     // Источник
-    params.sourceFWidth = 1.6 / L;
+    params.sourceFWidth = 0.5 / L;
     params.source_pos = static_cast<int>(std::lround(3.0 * L / params.dx));
 
     // Drude ADE
@@ -167,14 +168,23 @@ int main() {
         }
         std::cout << "rt_coeff = " << rt_coeff << "\n";
 
-
-
         std::cout << "Simulation finished.\n";
+
+
+
+        SpectrumAnalyzer specIn;
+        specIn.buildFluxSpectrum(simPlasma.getMonitor(0));
+        specIn.writeSpectrumCSV("spectrum_in.csv", params.sourceFreq);
+
+        SpectrumAnalyzer specOut;
+        specOut.buildFluxSpectrum(simPlasma.getMonitor(1));
+        specOut.writeSpectrumCSV("spectrum_out.csv", params.sourceFreq);
+
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << "\n";
         return 1;
     }
 
     return 0;
-}
+};
 

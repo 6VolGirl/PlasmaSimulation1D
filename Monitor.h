@@ -6,6 +6,7 @@
 #define MONITOR_H
 
 #include <vector>
+#include <string>
 
 
 struct Monitor {
@@ -25,7 +26,7 @@ struct Monitor {
   void sample(double t, double e, double h) {
     time.push_back(t);
     fieldEx.push_back(e);
-    fieldEx.push_back(h);
+    fieldHy.push_back(h);
     intensity.push_back(e * e);
   }
 
@@ -43,7 +44,7 @@ struct Monitor {
     std::ofstream out(filename);
     out << "t,Ex,Ie2\n";
     for (size_t k = 0; k < time.size(); ++k) {
-      out << time[k] << "," << fieldEx[k] <<  "," << intensity[k] << "\n";
+      out << time[k] << "," << fieldEx[k] <<  ","  << fieldHy[k] <<  "," << intensity[k] << "\n";
     }
   }
 

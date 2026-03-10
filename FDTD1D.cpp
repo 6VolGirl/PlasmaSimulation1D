@@ -92,23 +92,6 @@ void FDTD1D::writeImpulsePlasmaCSV(const std::string& filename) const {
     out << std::scientific << std::setprecision(9);
 
     const size_t Nt = snapshotsEx_.size();
-    // const int Nx = p_.nx;
-    // const double invRes = 1.0 / static_cast<double>(p_.resolution);
-    //
-    // out << "time_over_fL,x_tilde,Ez\n";
-    //
-    // for (size_t k = 0; k < Nt; ++k) {
-    //     const double t_over_fL = (2.0 * k) * p_.dt;
-    //
-    //     for (int i = 0; i < Nx; ++i) {
-    //         const double x_tilde = (static_cast<double>(i) - p_.source_pos) * invRes;
-    //         const double Ez = snapshotsEx_[k][i];
-    //
-    //         out << t_over_fL << ","
-    //             << x_tilde   << ","
-    //             << Ez        << "\n";
-    //     }
-
     out << "time_over_fL,x_tilde,Ez\n";
     for (size_t k = 0; k < Nt; ++k) {
         const double t_over_lambda_p = (2.0 * k) * p_.dt;
@@ -144,7 +127,7 @@ void FDTD1D::addMonitor(int pos) {
 
 void FDTD1D::sampleMonitors(double t) {
     for (auto& m : monitors_) {
-        m.sample(t, Ex_n_[m.position]);
+        m.sample(t, Ex_n_[m.position], Hy_[m.position]);
     }
 }
 
