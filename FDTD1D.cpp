@@ -49,7 +49,7 @@ void FDTD1D::run() {
                 const double C2 = (2.0 * epsInf_[i] - sigmaE_[i] * p_.dt) / denom;
                 const double C3 = (2.0 * p_.dt) / denom;
 
-                const double curlH = (Hy_[i - 1] - Hy_[i]) / p_.dx;
+                const double curlH = (Hy_[i] - Hy_[i-1]) / p_.dx;
                 const double Jterm = drude_.Jhalf_noEterm(i);
 
                 Ex_np1_[i] = C1 * Ex_nm1_[i] + C2 * Ex_n_[i] + C3 * (curlH - Jterm);
@@ -70,13 +70,13 @@ void FDTD1D::run() {
 
             // 3) H^{n+3/2} из H^{n+1/2} и E^{n+1}
             for (int i = 0; i < p_.nx; ++i) {
-                Hy_[i] = da[i] * Hy_[i] + db[i] * (Ex_np1_[i] - Ex_np1_[i + 1]);
+                Hy_[i] = da[i] * Hy_[i] + db[i] * (Ex_np1_[i+1] - Ex_np1_[i]);
             }
 
             Ex_nm1_.swap(Ex_n_);
             Ex_n_.swap(Ex_np1_);
 
-            sampleMonitors(t);
+            sampleMonitors((n+1)*p_.dt);
 
             if (n % 2 == 0) snapshotsEx_.push_back(Ex_n_);
         }
@@ -127,7 +127,7 @@ void FDTD1D::addMonitor(int pos) {
 
 void FDTD1D::sampleMonitors(double t) {
     for (auto& m : monitors_) {
-        m.sample(t, Ex_n_[m.position], Hy_[m.position]);
+        m.sample(t, Ex_n_[m.position], Hy_[m.position-1], Hy_[m.position]);
     }
 }
 

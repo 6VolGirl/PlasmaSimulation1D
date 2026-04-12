@@ -45,8 +45,8 @@ public:
 
         // Так как H хранить на полшага сдвинутое относительно E(t)
         // то H(t)≈ 0.5 * ( H_n−1/2 + H_n+1/2)
-        for (int i = 0; i < m.fieldEx.size()-1; i++){
-            double Hy_i = 0.5 * (m.fieldHy[i] + m.fieldHy[i+1]);
+        for (int i = 1; i < m.fieldEx.size()-1; i++){
+            double Hy_i = 0.25 * (m.fieldHy[i-1] + m.fieldHy[i] + m.fieldHy2[i-1] + m.fieldHy2[i]);
             poynting_t[i] = m.fieldEx[i] * Hy_i;
         }
         poynting_f = computeFFT(poynting_t, dt);

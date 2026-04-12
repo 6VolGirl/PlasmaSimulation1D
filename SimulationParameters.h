@@ -37,9 +37,6 @@ struct SimulationParameters {
     double gamma = 0.0;         // Γ
     double drudeStrength = 1.0; // f
 
-    // Monitors
-    int monitorFront;
-    int monitorBack;
 };
 
 

@@ -80,34 +80,3 @@ std::vector<std::complex<double>> SpectrumAnalyzer::computeFFT(const std::vector
 
 
 
-//void SpectrumAnalyzer::writeSpectrumCSV(const std::string& filename, double fL) const {
-//    if (freq.empty() || poynting_f.empty()) {
-//        throw std::runtime_error("writeSpectrumCSV: spectrum is empty");
-//    }
-//    if (freq.size() != poynting_f.size()) {
-//        throw std::runtime_error("writeSpectrumCSV: freq and spectrum sizes differ");
-//    }
-//    if (fL <= 0.0) {
-//        throw std::runtime_error("writeSpectrumCSV: fL must be > 0");
-//    }
-//
-//    std::ofstream out(filename);
-//    if (!out.is_open()) {
-//        throw std::runtime_error("writeSpectrumCSV: cannot open output file");
-//    }
-//
-//    out << std::scientific << std::setprecision(10);
-//    out << "f,f_over_fL,ReS,ImS,absS2\n";
-//
-//    for (std::size_t k = 0; k < freq.size(); ++k) {
-//        const double f = freq[k];
-//        const double absS2 = std::norm(poynting_f[k]);
-//
-//        out << f << ','
-//            << f / fL << ','
-//            << poynting_f[k].real() << ','
-//            << poynting_f[k].imag() << ','
-//            << absS2 << '\n';
-//    }
-//}
-
