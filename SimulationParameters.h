@@ -37,6 +37,8 @@ struct SimulationParameters {
     double gamma = 0.0;         // Γ
     double drudeStrength = 1.0; // f
 
+    double chirpRate = 0.0;
+
 };
 
 

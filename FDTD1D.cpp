@@ -6,7 +6,7 @@
 
 FDTD1D::FDTD1D(const SimulationParameters& p)
     : p_(p),
-      src_(p.sourceFreq, p.sourceFWidth),
+      src_(p.sourceFreq, p.sourceFWidth, p.chirpRate),
       Ex_nm1_(p.nx + 1, 0.0),  // E^{n-1}
       Ex_n_(p.nx + 1, 0.0),    // E^{n}
       Ex_np1_(p.nx + 1, 0.0),  // E^{n+1}
