@@ -97,7 +97,7 @@ int main() {
     params.оmega_p = 1.0;
     const double L = 2 * M_PI / params.оmega_p;
     params.plasmaWidth = 4.0 * L;
-    params.sourceFreq = 0.5 / L;
+    params.sourceFreq = 0.60 / L;
     params.sourceFWidth = 1.0  / L;
 
 
@@ -106,7 +106,7 @@ int main() {
     params.dx = 0.06 * L;
     params.courantNumber = 0.5;
     params.dt = params.courantNumber * params.dx;
-    params.numTimeSteps = 2000;
+    params.numTimeSteps = 3000;
 
     params.resolution = static_cast<int>(std::lround(1.0 / params.dx));
 
@@ -130,7 +130,7 @@ int main() {
     params.gamma = 0.2 / L;
     params.drudeStrength = 1.0;
 
-    params.chirpRate = 0.0;
+    params.chirpRate = 1.0;
 
 
 
@@ -140,47 +140,47 @@ int main() {
     try {
         normalizeParamsOnPlasmaWavelength(params);
 
-        std::vector<double> fwidths = {1.0 / L, 2.0 / L, 4.0 / L};
-        std::vector<double> widths1 = {4.0 * L};
-        const int Nfreq = 20;
-        const double f_min = 0.2 / L;
-        const double f_max = 2.0 / L;
-
-        // Анализ времени тунеллирования от частоты
-        std::ofstream csv1("tau_vs_freq.csv");
-        csv1 << std::scientific << std::setprecision(8);
-        csv1 << "f_over_omega_p,sourceFWidth,plasmaWidth_over_L,tauVac,tauTunPlasma,deltaTau,T_coeff\n";
-
-        for (double pw : widths1) {
-            for (double fw : fwidths) {
-                for (int k = 0; k < Nfreq; ++k) {
-                    double f = f_min + (f_max - f_min) * k / (Nfreq - 1);
-
-                    SimulationParameters p = baseParams;
-
-                    p.sourceFreq   = f;
-                    p.sourceFWidth = fw;
-                    p.plasmaWidth  = pw;
-
-                    p.plasmaStart = static_cast<int>(std::lround(8.0 * L / p.dx));
-                    p.plasmaEnd   = static_cast<int>(std::lround((8.0 * L + pw) / p.dx));
-
-                    ScanResult r = runOnePoint(p);
-
-                    double f_over_wp = f * L;
-
-                    csv1 << f_over_wp << "," << (fw * L) << "," << pw / L << "," << r.tauVac << ","
-                        << r.tauTunPlasma << "," << r.deltaTau << "," << r.T_coeff << "\n";
-
-                    std::cout << "f/wp = " << f_over_wp << "  fw = " << (fw * L) << "  deltaTau = " << r.deltaTau
-                              << "  T = " << r.T_coeff << "\n";
-                }
-            }
-        }
-
-        csv1.close();
-        std::cout << "Scan written to tau_vs_freq.csv\n";
-
+        // std::vector<double> fwidths = {1.0 / L, 1.5 / L, 2.0 / L};
+        // std::vector<double> widths1 = {4.0 * L};
+        // const int Nfreq = 20;
+        // const double f_min = 0.2 / L;
+        // const double f_max = 2.0 / L;
+        //
+        // // Анализ времени тунеллирования от частоты
+        // std::ofstream csv1("tau_vs_freq.csv");
+        // csv1 << std::scientific << std::setprecision(8);
+        // csv1 << "f_over_omega_p,sourceFWidth,plasmaWidth_over_L,tauVac,tauTunPlasma,deltaTau,T_coeff\n";
+        //
+        // for (double pw : widths1) {
+        //     for (double fw : fwidths) {
+        //         for (int k = 0; k < Nfreq; ++k) {
+        //             double f = f_min + (f_max - f_min) * k / (Nfreq - 1);
+        //
+        //             SimulationParameters p = baseParams;
+        //
+        //             p.sourceFreq   = f;
+        //             p.sourceFWidth = fw;
+        //             p.plasmaWidth  = pw;
+        //
+        //             p.plasmaStart = static_cast<int>(std::lround(8.0 * L / p.dx));
+        //             p.plasmaEnd   = static_cast<int>(std::lround((8.0 * L + pw) / p.dx));
+        //
+        //             ScanResult r = runOnePoint(p);
+        //
+        //             double f_over_wp = f * L;
+        //
+        //             csv1 << f_over_wp << "," << (fw * L) << "," << pw / L << "," << r.tauVac << ","
+        //                 << r.tauTunPlasma << "," << r.deltaTau << "," << r.T_coeff << "\n";
+        //
+        //             std::cout << "f/wp = " << f_over_wp << "  fw = " << (fw * L) << "  deltaTau = " << r.deltaTau
+        //                       << "  T = " << r.T_coeff << "\n";
+        //         }
+        //     }
+        // }
+        //
+        // csv1.close();
+        // std::cout << "Scan written to tau_vs_freq.csv\n";
+        //
 
 
 
@@ -223,7 +223,7 @@ int main() {
         // csvChirp << std::scientific << std::setprecision(8);
         // csvChirp << "chirpRateNorm,tauTunVacuum,tauTunPlasma,deltaTau,Tcoeff\n";
         //
-        // std::vector<double> chirpsNorm = {-1.0, -0.5, -0.2, 0.0, 0.2, 0.5, 1.0};
+        // std::vector<double> chirpsNorm = {-10.0, -5.0, -2.0, -1.0, -0.5, -0.2, 0.0, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0};
         //
         // double freq = 0.60 / L;
         // double fWidth = 1.0 / L;
@@ -259,79 +259,73 @@ int main() {
         // std::cout << "Scan written to tau_vs_chirp.csv\n";
 
 
-        // //τ_p = sqrt(4ln2) / fwidth
-        // std::vector<double> fwidths = { 1.665 / L, 0.832 / L, 0.333 / L, 0.0832 / L};
-        // // если хочешь ближе к рисунку из книги, потом можно взять, например:
-        // // std::vector<double> fwidths = {1.0 / L, 0.5 / L, 0.2 / L, 0.05 / L};
-        //
-        // std::vector<double> widths2 = {
-        //     0.5 * L, 0.6 * L, 0.7 * L, 0.8 * L, 0.9 * L,
-        //     1.0 * L, 1.1 * L, 1.2 * L, 1.3 * L, 1.4 * L,
-        //     1.5 * L, 1.6 * L, 1.7 * L, 1.8 * L, 1.9 * L, 2.0 * L,};
-        //
-        // // фиксируем частоту, как в твоей формулировке: f / fp = 1/4
-        // double fixedFreq = 0.25 / L;
-        //
-        // // файл для графика tau(d/L) при разных длительностях импульса
-        // std::ofstream csv_width_multi("tau_vs_width_multi.csv");
-        // csv_width_multi << std::scientific << std::setprecision(8);
-        // csv_width_multi << "PlasmaWidth_over_L,"
-        //                   "sourceFWidth_over_1_over_L,"
-        //                   "tauPulse_times_fL,"
-        //                   "tauLight_times_fL,"
-        //                   "tauVac,"
-        //                   "tauTunPlasma,"
-        //                   "deltaTau,"
-        //                   "Tcoeff\n";
-        //
-        // for (double fw : fwidths) {
-        //     for (double pw : widths2) {
-        //         SimulationParameters p = baseParams;
-        //
-        //         p.sourceFreq   = fixedFreq;
-        //         p.sourceFWidth = fw;
-        //         p.plasmaWidth  = pw;
-        //
-        //         p.plasmaStart = static_cast<int>(std::lround(6.0 * L / p.dx));
-        //         p.plasmaEnd   = static_cast<int>(std::lround((6.0 * L + pw) / p.dx));
-        //
-        //         ScanResult r = runOnePoint(p);
-        //
-        //         const double d_over_L = pw / L;
-        //         const double fw_norm  = fw * L;
-        //
-        //         // ВАЖНО:
-        //         // Если в твоём GaussianSource длительность импульса действительно ~ 1/sourceFWidth,
-        //         // то это правильная формула для безразмерной длительности:
-        //         const double tauPulse_times_fL = 1.0 / fw_norm;
-        //
-        //         // время прохождения света через слой толщины d:
-        //         // tau_light * fL = d / L
-        //         const double tauLight_times_fL = d_over_L;
-        //
-        //         csv_width_multi
-        //             << d_over_L << ","
-        //             << fw_norm << ","
-        //             << tauPulse_times_fL << ","
-        //             << tauLight_times_fL << ","
-        //             << r.tauVac << ","
-        //             << r.tauTunPlasma << ","
-        //             << r.deltaTau << ","
-        //             << r.T_coeff << "\n";
-        //
-        //         std::cout
-        //             << "d/L = " << d_over_L
-        //             << "  fw*L = " << fw_norm
-        //             << "  tauPulse*fL = " << tauPulse_times_fL
-        //             << "  tauPlasma = " << r.tauTunPlasma
-        //             << "  deltaTau = " << r.deltaTau
-        //             << "  T = " << r.T_coeff
-        //             << "\n";
-        //     }
-        // }
-        //
-        // csv_width_multi.close();
-        // std::cout << "Scan written to tau_vs_width_multi.csv\n";
+        //τ_p = sqrt(4ln2) / fwidth
+        //std::vector<double> fwidths = { 1.665 / L, 0.832 / L, 0.333 / L, 0.0832 / L};
+         std::vector<double> fwidths = {1.0 / L, 0.5 / L, 0.2 / L, 0.05 / L};
+
+        std::vector<double> widths2 = {
+            0.5 * L, 0.6 * L, 0.7 * L, 0.8 * L, 0.9 * L,
+            1.0 * L, 1.1 * L, 1.2 * L, 1.3 * L, 1.4 * L,
+            1.5 * L, 1.6 * L, 1.7 * L, 1.8 * L, 1.9 * L, 2.0 * L,};
+
+        // фиксируем частоту, как в твоей формулировке: f / fp = 1/4
+        double fixedFreq = 0.25 / L;
+
+        // файл для графика tau(d/L) при разных длительностях импульса
+        std::ofstream csv_width_multi("tau_vs_width_multi.csv");
+        csv_width_multi << std::scientific << std::setprecision(8);
+        csv_width_multi << "PlasmaWidth_over_L,"
+                          "sourceFWidth_over_1_over_L,"
+                          "tauPulse_times_fL,"
+                          "tauLight_times_fL,"
+                          "tauVac,"
+                          "tauTunPlasma,"
+                          "deltaTau,"
+                          "Tcoeff\n";
+
+        for (double fw : fwidths) {
+            for (double pw : widths2) {
+                SimulationParameters p = baseParams;
+
+                p.sourceFreq   = fixedFreq;
+                p.sourceFWidth = fw;
+                p.plasmaWidth  = pw;
+
+                p.plasmaStart = static_cast<int>(std::lround(6.0 * L / p.dx));
+                p.plasmaEnd   = static_cast<int>(std::lround((6.0 * L + pw) / p.dx));
+
+                ScanResult r = runOnePoint(p);
+
+                const double d_over_L = pw / L;
+                const double fw_norm  = fw * L;
+
+                const double tauPulse_times_fL = 1.0 / fw_norm;
+
+                const double tauLight_times_fL = d_over_L;
+
+                csv_width_multi
+                    << d_over_L << ","
+                    << fw_norm << ","
+                    << tauPulse_times_fL << ","
+                    << tauLight_times_fL << ","
+                    << r.tauVac << ","
+                    << r.tauTunPlasma << ","
+                    << r.deltaTau << ","
+                    << r.T_coeff << "\n";
+
+                std::cout
+                    << "d/L = " << d_over_L
+                    << "  fw*L = " << fw_norm
+                    << "  tauPulse*fL = " << tauPulse_times_fL
+                    << "  tauPlasma = " << r.tauTunPlasma
+                    << "  deltaTau = " << r.deltaTau
+                    << "  T = " << r.T_coeff
+                    << "\n";
+            }
+        }
+
+        csv_width_multi.close();
+        std::cout << "Scan written to tau_vs_width_multi.csv\n";
 
 
 

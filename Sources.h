@@ -43,10 +43,9 @@ struct GaussianSource {
     // double operator()(double t) const {
     //     if (t < start_time || t > finish_time) return 0.0;
     //
-    //     double quadChirp = 1.0;
     //     double tau = t - t0;
     //     double env = std::exp(-0.5 * tau * tau / (w * w));
-    //     double phase = 2.0 * M_PI * (freq * tau + (quadChirp / 3.0) * tau * tau * tau);
+    //     double phase = 2.0 * M_PI * (freq * tau + (chirpRate / 3.0) * tau * tau * tau);
     //
     //     return env * std::sin(phase);
     // }
@@ -55,10 +54,9 @@ struct GaussianSource {
     // double operator()(double t) const {
     //     if (t < start_time || t > finish_time) return 0.0;
     //
-    //     double cubicChirp = 1.0;
     //     double tau = t - t0;
     //     double env = std::exp(-0.5 * tau * tau / (w * w));
-    //     double phase = 2.0 * M_PI * (freq * tau + 0.25 * cubicChirp * tau * tau * tau * tau);
+    //     double phase = 2.0 * M_PI * (freq * tau + 0.25 * chirpRate * tau * tau * tau * tau);
     //
     //     return env * std::sin(phase);
     // }
@@ -67,10 +65,9 @@ struct GaussianSource {
     // double operator()(double t) const {
     //     if (t < start_time || t > finish_time) return 0.0;
     //
-    //     double symChirp = 1.0;
     //     double tau = t - t0;
     //     double env = std::exp(-0.5 * tau * tau / (w * w));
-    //     double phase = 2.0 * M_PI * (freq * tau + 0.5 * symChirp * tau * std::abs(tau));
+    //     double phase = 2.0 * M_PI * (freq * tau + 0.5 * chirpRate * tau * std::abs(tau));
     //
     //     return env * std::sin(phase);
     // }
